@@ -1,5 +1,3 @@
-# edgy-site
-
-Edgy Website
+# edgy-website
 
 React ^17.0.2
