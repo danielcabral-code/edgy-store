@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import Modal from "react-modal";
+import TextField from "@material-ui/core/TextField";
 
 import "./global.css";
 
@@ -28,6 +30,20 @@ function App() {
   const [xlBlackClicked, setXlBlackClicked] = useState(false);
 
   const [anySizeSelected, setAnySizeSelected] = useState(false);
+
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+
+  const [nameError, setNameError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+
+  const [nameValue, setNameValue] = useState("");
+  const [phoneValue, setPhoneValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+
+  const [nameHelperText, setNameHelperText] = useState("");
+  const [phoneHelperText, setPhoneHelperText] = useState("");
+  const [emailHelperText, setEmailHelperText] = useState("");
 
   function openProductsPage() {
     setMainPageVisibility(false);
@@ -133,6 +149,46 @@ function App() {
     }
   }
 
+  function openModal() {
+    setModalIsOpen(true);
+  }
+
+  function closeModal() {
+    setModalIsOpen(false);
+  }
+
+  function validateFields() {
+    if (nameValue.length < 1) {
+      setNameError(true);
+      setNameHelperText("Preenchimento obrigatório");
+    } else {
+      setNameError(false);
+      setNameHelperText("");
+    }
+
+    if (phoneValue.length < 1) {
+      setPhoneError(true);
+      setPhoneHelperText("Preenchimento obrigatório");
+    } else if (!Number(phoneValue)) {
+      setPhoneError(true);
+      setPhoneHelperText("Deve ser numérico");
+    } else if (phoneValue.length != 9) {
+      setPhoneError(true);
+      setPhoneHelperText("Deve ser composto por 9 dígitos");
+    } else {
+      setPhoneError(false);
+      setPhoneHelperText("");
+    }
+
+    if (emailValue.length < 1) {
+      setEmailError(true);
+      setEmailHelperText("Preenchimento obrigatório");
+    } else {
+      setEmailError(false);
+      setEmailHelperText("");
+    }
+  }
+
   useEffect(() => {
     if (
       mWhiteClicked ||
@@ -207,6 +263,7 @@ function App() {
                 ></img>
 
                 <label style={edgyWhite}>edgy white</label>
+                <label style={priceTagWhite}>€12.99</label>
               </Product1>
 
               <Product2
@@ -222,6 +279,7 @@ function App() {
                 ></img>
 
                 <label style={edgyBlack}>edgy black</label>
+                <label style={priceTagBlack}>€12.99</label>
               </Product2>
 
               {product1Clicked && (
@@ -280,8 +338,52 @@ function App() {
                 <PurchaseButton
                   src={purchaseButton}
                   draggable={false}
+                  onClick={openModal}
                 ></PurchaseButton>
               )}
+
+              <Modal
+                style={modalStyle}
+                isOpen={modalIsOpen}
+                onRequestClose={closeModal}
+              >
+                <AlignInputsDiv>
+                  <TextField
+                    style={inputStyle}
+                    label="Nome"
+                    type="text"
+                    color="secondary"
+                    variant="outlined"
+                    error={nameError}
+                    helperText={nameHelperText}
+                    onChange={(event) => setNameValue(event.target.value)}
+                  ></TextField>
+
+                  <TextField
+                    style={inputStyle}
+                    label="Telemóvel"
+                    type="text"
+                    color="secondary"
+                    variant="outlined"
+                    error={phoneError}
+                    helperText={phoneHelperText}
+                    onChange={(event) => setPhoneValue(event.target.value)}
+                  ></TextField>
+
+                  <TextField
+                    style={inputStyle}
+                    label="Email"
+                    type="email"
+                    color="secondary"
+                    variant="outlined"
+                    error={emailError}
+                    helperText={emailHelperText}
+                    onChange={(event) => setEmailValue(event.target.value)}
+                  ></TextField>
+
+                  <label onClick={validateFields}>BOTÃO TESTE</label>
+                </AlignInputsDiv>
+              </Modal>
             </CenterAlignProductsDiv>
           </>
         )}
@@ -422,23 +524,33 @@ const edgyWhite = {
   fontFamily: "Righteous",
   color: "White",
   fontSize: 30,
-  marginBottom: 0,
-  marginRight: 0,
 };
 
 const edgyBlack = {
   fontFamily: "Righteous",
   color: "Black",
   fontSize: 30,
-  marginBottom: 0,
-  marginRight: 0,
+};
+
+const priceTagWhite = {
+  fontFamily: "Righteous",
+  color: "White",
+  fontSize: 18,
+  marginTop: 6,
+};
+
+const priceTagBlack = {
+  fontFamily: "Righteous",
+  color: "Black",
+  fontSize: 18,
+  marginTop: 6,
 };
 
 const Product1SizesDiv = styled.div`
   position: absolute;
   self-align: center;
   margin-right: 625px;
-  margin-top: 580px;
+  margin-top: 590px;
   display: flex;
   flex-direction: column;
 `;
@@ -447,7 +559,7 @@ const Product2SizesDiv = styled.div`
   position: absolute;
   self-align: center;
   margin-left: 275px;
-  margin-top: 580px;
+  margin-top: 590px;
   display: flex;
   flex-direction: column;
 `;
@@ -516,5 +628,38 @@ const PurchaseButton = styled.img`
     cursor: pointer;
   }
 `;
+
+const modalStyle = {
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.45)",
+  },
+  content: {
+    position: "absolute",
+    top: "140px",
+    left: "300px",
+    right: "300px",
+    bottom: "180px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+};
+
+const AlignInputsDiv = styled.div`
+  width: 280px;
+  display: flex;
+  align-self: center;
+  flex-direction: column;
+  justify-content: center;
+`;
+
+const inputStyle = {
+  marginTop: 20,
+};
 
 export default App;
