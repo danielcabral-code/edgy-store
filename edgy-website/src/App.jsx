@@ -172,17 +172,23 @@ function App() {
     } else if (!Number(phoneValue)) {
       setPhoneError(true);
       setPhoneHelperText("Deve ser numérico");
-    } else if (phoneValue.length != 9) {
+    } else if (phoneValue.length < 6 || phoneValue.length > 14) {
       setPhoneError(true);
-      setPhoneHelperText("Deve ser composto por 9 dígitos");
+      setPhoneHelperText("Não é válido");
     } else {
       setPhoneError(false);
       setPhoneHelperText("");
     }
 
+    let re =
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
     if (emailValue.length < 1) {
       setEmailError(true);
       setEmailHelperText("Preenchimento obrigatório");
+    } else if (!re.test(emailValue)) {
+      setEmailError(true);
+      setEmailHelperText("Não é válido");
     } else {
       setEmailError(false);
       setEmailHelperText("");
@@ -347,42 +353,87 @@ function App() {
                 isOpen={modalIsOpen}
                 onRequestClose={closeModal}
               >
-                <AlignInputsDiv>
-                  <TextField
-                    style={inputStyle}
-                    label="Nome"
-                    type="text"
-                    color="secondary"
-                    variant="outlined"
-                    error={nameError}
-                    helperText={nameHelperText}
-                    onChange={(event) => setNameValue(event.target.value)}
-                  ></TextField>
+                <AlignInputSectionsDiv>
+                  <AlignInputsDiv>
+                    <TextField
+                      style={inputStyle}
+                      label="Nome"
+                      name="name"
+                      type="text"
+                      color="secondary"
+                      variant="outlined"
+                      error={nameError}
+                      helperText={nameHelperText}
+                      onChange={(event) => setNameValue(event.target.value)}
+                    ></TextField>
 
-                  <TextField
-                    style={inputStyle}
-                    label="Telemóvel"
-                    type="text"
-                    color="secondary"
-                    variant="outlined"
-                    error={phoneError}
-                    helperText={phoneHelperText}
-                    onChange={(event) => setPhoneValue(event.target.value)}
-                  ></TextField>
+                    <TextField
+                      style={inputStyle}
+                      label="Telemóvel"
+                      name="phone"
+                      type="text"
+                      color="secondary"
+                      variant="outlined"
+                      error={phoneError}
+                      helperText={phoneHelperText}
+                      onChange={(event) => setPhoneValue(event.target.value)}
+                    ></TextField>
 
-                  <TextField
-                    style={inputStyle}
-                    label="Email"
-                    type="email"
-                    color="secondary"
-                    variant="outlined"
-                    error={emailError}
-                    helperText={emailHelperText}
-                    onChange={(event) => setEmailValue(event.target.value)}
-                  ></TextField>
+                    <TextField
+                      style={inputStyle}
+                      label="Email"
+                      name="email"
+                      type="email"
+                      color="secondary"
+                      variant="outlined"
+                      error={emailError}
+                      helperText={emailHelperText}
+                      onChange={(event) => setEmailValue(event.target.value)}
+                    ></TextField>
+                  </AlignInputsDiv>
 
-                  <label onClick={validateFields}>BOTÃO TESTE</label>
-                </AlignInputsDiv>
+                  <AlignInputsDiv>
+                    <TextField
+                      style={inputStyle}
+                      label="Rua"
+                      name="street"
+                      type="text"
+                      color="secondary"
+                      variant="outlined"
+                    ></TextField>
+
+                    <TextField
+                      style={inputStyle}
+                      label="Porta"
+                      name="door"
+                      type="text"
+                      color="secondary"
+                      variant="outlined"
+                    ></TextField>
+
+                    <TextField
+                      style={inputStyle}
+                      label="Andar"
+                      name="floor"
+                      type="text"
+                      color="secondary"
+                      variant="outlined"
+                    ></TextField>
+
+                    <TextField
+                      style={inputStyle}
+                      label="Código Postal"
+                      name="zipcode"
+                      type="text"
+                      color="secondary"
+                      variant="outlined"
+                    ></TextField>
+                  </AlignInputsDiv>
+                </AlignInputSectionsDiv>
+
+                <label style={tempTestButtonLabel} onClick={validateFields}>
+                  BOTÃO TESTE
+                </label>
               </Modal>
             </CenterAlignProductsDiv>
           </>
@@ -650,15 +701,29 @@ const modalStyle = {
   },
 };
 
+const AlignInputSectionsDiv = styled.div`
+  display: flex;
+  align-self: center;
+  flex-direction: row;
+  justify-content: center;
+`;
+
 const AlignInputsDiv = styled.div`
   width: 280px;
   display: flex;
   align-self: center;
   flex-direction: column;
   justify-content: center;
+  margin-left: 10px;
+  margin-right: 10px;
 `;
 
 const inputStyle = {
+  marginTop: 20,
+};
+
+const tempTestButtonLabel = {
+  alignSelf: "center",
   marginTop: 20,
 };
 
