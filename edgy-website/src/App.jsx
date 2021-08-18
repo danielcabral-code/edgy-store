@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import firebase from "firebase";
+
 import styled from "styled-components";
 import Modal from "react-modal";
 import TextField from "@material-ui/core/TextField";
@@ -12,7 +14,15 @@ import tempProd1 from "./images/tempProd1.png";
 import tempProd2 from "./images/tempProd2.png";
 import purchaseButton from "./images/purchaseButton.png";
 
+Modal.setAppElement("#root");
+
 function App() {
+  const db = firebase.firestore();
+
+  useEffect(() => {
+    getStock();
+  }, []);
+
   const [mainPageVisibility, setMainPageVisibility] = useState(true);
 
   const [product1Hovered, setProduct1Hovered] = useState(false);
@@ -36,14 +46,61 @@ function App() {
   const [nameError, setNameError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const [emailError, setEmailError] = useState(false);
+  const [streetError, setStreetError] = useState(false);
+  const [doorError, setDoorError] = useState(false);
+  const [zipcodeError, setZipcodeError] = useState(false);
 
   const [nameValue, setNameValue] = useState("");
   const [phoneValue, setPhoneValue] = useState("");
   const [emailValue, setEmailValue] = useState("");
+  const [streetValue, setStreetValue] = useState("");
+  const [doorValue, setDoorValue] = useState("");
+  const [floorValue, setFloorValue] = useState("");
+  const [zipcodeValue, setZipcodeValue] = useState("");
 
   const [nameHelperText, setNameHelperText] = useState("");
   const [phoneHelperText, setPhoneHelperText] = useState("");
   const [emailHelperText, setEmailHelperText] = useState("");
+  const [streetHelperText, setStreetHelperText] = useState("");
+  const [doorHelperText, setDoorHelperText] = useState("");
+  const [zipcodeHelperText, setZipcodeHelperText] = useState("");
+
+  const [validateFieldsClicked, setValidateFieldsClicked] = useState(false);
+
+  const [whiteModelsData, setWhiteModelsData] = useState();
+  const [blackModelsData, setBlackModelsData] = useState();
+
+  function getStock() {
+    db.collection("models")
+      .doc("white")
+      .get()
+      .then((doc) => {
+        if (doc.exists) {
+          setWhiteModelsData(doc.data());
+        } else {
+          // doc.data() will be undefined in this case
+          console.log("No such document!");
+        }
+      })
+      .catch((error) => {
+        console.log("Error getting document:", error);
+      });
+
+    db.collection("models")
+      .doc("black")
+      .get()
+      .then((doc) => {
+        if (doc.exists) {
+          setBlackModelsData(doc.data());
+        } else {
+          // doc.data() will be undefined in this case
+          console.log("No such document!");
+        }
+      })
+      .catch((error) => {
+        console.log("Error getting document:", error);
+      });
+  }
 
   function openProductsPage() {
     setMainPageVisibility(false);
@@ -158,6 +215,8 @@ function App() {
   }
 
   function validateFields() {
+    setValidateFieldsClicked(true);
+
     if (nameValue.length < 1) {
       setNameError(true);
       setNameHelperText("Preenchimento obrigatório");
@@ -193,6 +252,249 @@ function App() {
       setEmailError(false);
       setEmailHelperText("");
     }
+
+    if (streetValue.length < 1) {
+      setStreetError(true);
+      setStreetHelperText("Preenchimento obrigatório");
+    } else {
+      setStreetError(false);
+      setStreetHelperText("");
+    }
+
+    if (doorValue.length < 1) {
+      setDoorError(true);
+      setDoorHelperText("Preenchimento obrigatório");
+    } else if (!Number(doorValue)) {
+      setDoorError(true);
+      setDoorHelperText("Deve ser numérico");
+    } else {
+      setDoorError(false);
+      setDoorHelperText("");
+    }
+
+    if (zipcodeValue.length < 1) {
+      setZipcodeError(true);
+      setZipcodeHelperText("Preenchimento obrigatório");
+    } else if (!Number(zipcodeValue) && !zipcodeValue.includes("-")) {
+      setZipcodeError(true);
+      setZipcodeHelperText("Deve ser numérico");
+    } else if (zipcodeValue.length != 8) {
+      setZipcodeError(true);
+      setZipcodeHelperText("Não é válido (Formato XXXX-XXX)");
+    } else if (
+      parseInt(zipcodeValue.substring(0, 4), 10) < 4000 ||
+      parseInt(zipcodeValue.substring(0, 4), 10) > 4500
+    ) {
+      setZipcodeError(true);
+      setZipcodeHelperText("Zona inválida (exclusivo Porto)");
+    } else {
+      setZipcodeError(false);
+      setZipcodeHelperText("");
+    }
+  }
+
+  function sendOrderToDatabase() {
+    let whiteSize = "";
+    let blackSize = "";
+
+    if (mWhiteClicked) {
+      whiteSize = "m";
+    } else if (lWhiteClicked) {
+      whiteSize = "l";
+    } else if (xlWhiteClicked) {
+      whiteSize = "xl";
+    }
+
+    if (mBlackClicked) {
+      blackSize = "m";
+    } else if (lBlackClicked) {
+      blackSize = "l";
+    } else if (xlBlackClicked) {
+      blackSize = "xl";
+    }
+
+    // Add a new document in collection "orders"
+    db.collection("orders")
+      .doc()
+      .set({
+        models: {
+          white: whiteSize,
+          black: blackSize,
+        },
+        name: nameValue,
+        cellphone: phoneValue,
+        email: emailValue,
+        street: streetValue,
+        door: doorValue,
+        floor: floorValue,
+        zipcode: zipcodeValue,
+      })
+      .then(() => {
+        console.log("Document successfully written!");
+
+        let whiteQuantity;
+
+        if (whiteSize == "m") {
+          db.collection("models")
+            .doc("white")
+            .get()
+            .then((documentSnapshot) => {
+              if (documentSnapshot.exists) {
+                whiteQuantity = documentSnapshot.get(whiteSize);
+                console.log(whiteQuantity);
+              }
+            })
+            .then(() => {
+              // Changes quantity of product on order (white)
+              db.collection("models")
+                .doc("white")
+                .update({
+                  m: whiteQuantity - 1,
+                })
+                .then(() => {
+                  console.log("Document successfully written!");
+                })
+                .catch((error) => {
+                  console.error("Error writing document: ", error);
+                });
+            });
+        }
+
+        if (whiteSize == "l") {
+          db.collection("models")
+            .doc("white")
+            .get()
+            .then((documentSnapshot) => {
+              if (documentSnapshot.exists) {
+                whiteQuantity = documentSnapshot.get(whiteSize);
+                console.log(whiteQuantity);
+              }
+            })
+            .then(() => {
+              // Changes quantity of product on order (white)
+              db.collection("models")
+                .doc("white")
+                .update({
+                  l: whiteQuantity - 1,
+                })
+                .then(() => {
+                  console.log("Document successfully written!");
+                })
+                .catch((error) => {
+                  console.error("Error writing document: ", error);
+                });
+            });
+        }
+
+        if (whiteSize == "xl") {
+          db.collection("models")
+            .doc("white")
+            .get()
+            .then((documentSnapshot) => {
+              if (documentSnapshot.exists) {
+                whiteQuantity = documentSnapshot.get(whiteSize);
+                console.log(whiteQuantity);
+              }
+            })
+            .then(() => {
+              // Changes quantity of product on order (white)
+              db.collection("models")
+                .doc("white")
+                .update({
+                  xl: whiteQuantity - 1,
+                })
+                .then(() => {
+                  console.log("Document successfully written!");
+                })
+                .catch((error) => {
+                  console.error("Error writing document: ", error);
+                });
+            });
+        }
+
+        let blackQuantity;
+
+        if (blackSize == "m") {
+          db.collection("models")
+            .doc("black")
+            .get()
+            .then((documentSnapshot) => {
+              if (documentSnapshot.exists) {
+                blackQuantity = documentSnapshot.get(blackSize);
+                console.log(blackQuantity);
+              }
+            })
+            .then(() => {
+              // Changes quantity of product on order (black)
+              db.collection("models")
+                .doc("black")
+                .update({
+                  m: blackQuantity - 1,
+                })
+                .then(() => {
+                  console.log("Document successfully written!");
+                })
+                .catch((error) => {
+                  console.error("Error writing document: ", error);
+                });
+            });
+        }
+
+        if (blackSize == "l") {
+          db.collection("models")
+            .doc("black")
+            .get()
+            .then((documentSnapshot) => {
+              if (documentSnapshot.exists) {
+                blackQuantity = documentSnapshot.get(blackSize);
+                console.log(blackQuantity);
+              }
+            })
+            .then(() => {
+              // Changes quantity of product on order (black)
+              db.collection("models")
+                .doc("black")
+                .update({
+                  l: blackQuantity - 1,
+                })
+                .then(() => {
+                  console.log("Document successfully written!");
+                })
+                .catch((error) => {
+                  console.error("Error writing document: ", error);
+                });
+            });
+        }
+
+        if (blackSize == "xl") {
+          db.collection("models")
+            .doc("black")
+            .get()
+            .then((documentSnapshot) => {
+              if (documentSnapshot.exists) {
+                blackQuantity = documentSnapshot.get(blackSize);
+                console.log(blackQuantity);
+              }
+            })
+            .then(() => {
+              // Changes quantity of product on order (black)
+              db.collection("models")
+                .doc("black")
+                .update({
+                  xl: blackQuantity - 1,
+                })
+                .then(() => {
+                  console.log("Document successfully written!");
+                })
+                .catch((error) => {
+                  console.error("Error writing document: ", error);
+                });
+            });
+        }
+      })
+      .catch((error) => {
+        console.error("Error writing document: ", error);
+      });
   }
 
   useEffect(() => {
@@ -215,6 +517,34 @@ function App() {
     mBlackClicked,
     lBlackClicked,
     xlBlackClicked,
+  ]);
+
+  const [preventRefreshAutoOrder, setPreventRefreshAutoOrder] = useState(0);
+
+  useEffect(() => {
+    if (preventRefreshAutoOrder == 0) {
+      setPreventRefreshAutoOrder(1);
+    } else if (preventRefreshAutoOrder == 1) {
+      if (
+        !nameError &&
+        !phoneError &&
+        !emailError &&
+        !streetError &&
+        !doorError &&
+        !zipcodeError &&
+        validateFieldsClicked
+      ) {
+        sendOrderToDatabase();
+      }
+    }
+  }, [
+    nameError,
+    phoneError,
+    emailError,
+    streetError,
+    doorError,
+    zipcodeError,
+    validateFieldsClicked,
   ]);
 
   return (
@@ -292,24 +622,39 @@ function App() {
                 <Product1SizesDiv>
                   <CenterAlignSizesDiv>
                     <label style={sizeIndicatorWhite}>size:</label>
-                    <SizeWhite
-                      style={mWhiteClicked ? whiteClickedStyle : null}
-                      onClick={mWhiteClick}
-                    >
-                      M
-                    </SizeWhite>
-                    <SizeWhite
-                      style={lWhiteClicked ? whiteClickedStyle : null}
-                      onClick={lWhiteClick}
-                    >
-                      L
-                    </SizeWhite>
-                    <SizeWhite
-                      style={xlWhiteClicked ? whiteClickedStyle : null}
-                      onClick={xlWhiteClick}
-                    >
-                      XL
-                    </SizeWhite>
+
+                    {whiteModelsData.m > 0 ? (
+                      <SizeWhite
+                        style={mWhiteClicked ? whiteClickedStyle : null}
+                        onClick={mWhiteClick}
+                      >
+                        M
+                      </SizeWhite>
+                    ) : (
+                      <SizeWhiteNoStock>M</SizeWhiteNoStock>
+                    )}
+
+                    {whiteModelsData.l > 0 ? (
+                      <SizeWhite
+                        style={lWhiteClicked ? whiteClickedStyle : null}
+                        onClick={lWhiteClick}
+                      >
+                        L
+                      </SizeWhite>
+                    ) : (
+                      <SizeWhiteNoStock>L</SizeWhiteNoStock>
+                    )}
+
+                    {whiteModelsData.xl > 0 ? (
+                      <SizeWhite
+                        style={xlWhiteClicked ? whiteClickedStyle : null}
+                        onClick={xlWhiteClick}
+                      >
+                        XL
+                      </SizeWhite>
+                    ) : (
+                      <SizeWhiteNoStock>XL</SizeWhiteNoStock>
+                    )}
                   </CenterAlignSizesDiv>
                 </Product1SizesDiv>
               )}
@@ -318,24 +663,39 @@ function App() {
                 <Product2SizesDiv>
                   <CenterAlignSizesDiv>
                     <label style={sizeIndicatorBlack}>size:</label>
-                    <SizeBlack
-                      style={mBlackClicked ? blackClickedStyle : null}
-                      onClick={mBlackClick}
-                    >
-                      M
-                    </SizeBlack>
-                    <SizeBlack
-                      style={lBlackClicked ? blackClickedStyle : null}
-                      onClick={lBlackClick}
-                    >
-                      L
-                    </SizeBlack>
-                    <SizeBlack
-                      style={xlBlackClicked ? blackClickedStyle : null}
-                      onClick={xlBlackClick}
-                    >
-                      XL
-                    </SizeBlack>
+
+                    {blackModelsData.m > 0 ? (
+                      <SizeBlack
+                        style={mBlackClicked ? blackClickedStyle : null}
+                        onClick={mBlackClick}
+                      >
+                        M
+                      </SizeBlack>
+                    ) : (
+                      <SizeBlackNoStock>M</SizeBlackNoStock>
+                    )}
+
+                    {blackModelsData.l > 0 ? (
+                      <SizeBlack
+                        style={lBlackClicked ? blackClickedStyle : null}
+                        onClick={lBlackClick}
+                      >
+                        L
+                      </SizeBlack>
+                    ) : (
+                      <SizeBlackNoStock>L</SizeBlackNoStock>
+                    )}
+
+                    {blackModelsData.xl > 0 ? (
+                      <SizeBlack
+                        style={xlBlackClicked ? blackClickedStyle : null}
+                        onClick={xlBlackClick}
+                      >
+                        XL
+                      </SizeBlack>
+                    ) : (
+                      <SizeBlackNoStock>XL</SizeBlackNoStock>
+                    )}
                   </CenterAlignSizesDiv>
                 </Product2SizesDiv>
               )}
@@ -357,7 +717,7 @@ function App() {
                   <AlignInputsDiv>
                     <TextField
                       style={inputStyle}
-                      label="Nome"
+                      label="Nome*"
                       name="name"
                       type="text"
                       color="secondary"
@@ -369,7 +729,7 @@ function App() {
 
                     <TextField
                       style={inputStyle}
-                      label="Telemóvel"
+                      label="Telemóvel*"
                       name="phone"
                       type="text"
                       color="secondary"
@@ -381,7 +741,7 @@ function App() {
 
                     <TextField
                       style={inputStyle}
-                      label="Email"
+                      label="Email*"
                       name="email"
                       type="email"
                       color="secondary"
@@ -395,20 +755,26 @@ function App() {
                   <AlignInputsDiv>
                     <TextField
                       style={inputStyle}
-                      label="Rua"
+                      label="Rua*"
                       name="street"
                       type="text"
                       color="secondary"
                       variant="outlined"
+                      error={streetError}
+                      helperText={streetHelperText}
+                      onChange={(event) => setStreetValue(event.target.value)}
                     ></TextField>
 
                     <TextField
                       style={inputStyle}
-                      label="Porta"
+                      label="Porta*"
                       name="door"
                       type="text"
                       color="secondary"
                       variant="outlined"
+                      error={doorError}
+                      helperText={doorHelperText}
+                      onChange={(event) => setDoorValue(event.target.value)}
                     ></TextField>
 
                     <TextField
@@ -418,15 +784,19 @@ function App() {
                       type="text"
                       color="secondary"
                       variant="outlined"
+                      onChange={(event) => setFloorValue(event.target.value)}
                     ></TextField>
 
                     <TextField
                       style={inputStyle}
-                      label="Código Postal"
+                      label="Código Postal*"
                       name="zipcode"
                       type="text"
                       color="secondary"
                       variant="outlined"
+                      error={zipcodeError}
+                      helperText={zipcodeHelperText}
+                      onChange={(event) => setZipcodeValue(event.target.value)}
                     ></TextField>
                   </AlignInputsDiv>
                 </AlignInputSectionsDiv>
@@ -640,6 +1010,14 @@ const SizeWhite = styled.label`
   }
 `;
 
+const SizeWhiteNoStock = styled.label`
+  font-family: Righteous;
+  color: black;
+  opacity: 0.4;
+  font-size: 30px;
+  margin-left: 40px;
+`;
+
 const sizeIndicatorBlack = {
   fontFamily: "Righteous",
   color: "Black",
@@ -657,6 +1035,14 @@ const SizeBlack = styled.label`
     transition: 0.4s;
     cursor: pointer;
   }
+`;
+
+const SizeBlackNoStock = styled.label`
+  font-family: Righteous;
+  color: black;
+  opacity: 0.4;
+  font-size: 30px;
+  margin-left: 40px;
 `;
 
 const whiteClickedStyle = {

@@ -1,9 +1,23 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
-import "./global.css"
+import firebase from "firebase/app";
+
+import "./global.css";
 import "./fonts/Jacksilver.ttf";
+
 import reportWebVitals from "./reportWebVitals";
+
+// Use your config values here.
+firebase.initializeApp({
+  apiKey: "AIzaSyCnQ1vZxrTICUAh0ixrmGcJrcMjRuBbhxw",
+  authDomain: "edgy-website.firebaseapp.com",
+  projectId: "edgy-website",
+  storageBucket: "edgy-website.appspot.com",
+  messagingSenderId: "678989657687",
+  appId: "1:678989657687:web:b18f5d9563ac6a10691512",
+  measurementId: "G-F7XEZTGE7R",
+});
 
 ReactDOM.render(
   <React.StrictMode>
