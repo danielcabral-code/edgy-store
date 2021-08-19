@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import firebase from "firebase";
+import firebase from "firebase/app";
+import "firebase/firestore";
 
 import styled from "styled-components";
 import Modal from "react-modal";
@@ -570,7 +571,7 @@ function App() {
             </CenterAlignDiv>
 
             <CenterAlignDiv>
-              <a href={"https://instagram.com"} target={"_blank"}>
+              <a href={"https://www.instagram.com/edgytshirts/"} target={"_blank"}>
                 <InstagramLogo
                   src={instagramLogo}
                   draggable={false}
