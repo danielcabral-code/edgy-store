@@ -1,4 +1,4 @@
-# edgy-website
+# edgy-store
 
 React ^17.0.2
 
